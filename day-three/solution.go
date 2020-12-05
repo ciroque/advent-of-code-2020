@@ -39,8 +39,13 @@ func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 }
 
 func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+	treeCountOne := CountTreesOnSlope(1, 1)
+	treeCountTwo := CountTreesOnSlope(3, 1)
+	treeCountThree := CountTreesOnSlope(5, 1)
+	treeCountFour := CountTreesOnSlope(7, 1)
+	treeCountFive := CountTreesOnSlope(1, 2)
 
-	channel <- 2
+	channel <- treeCountOne * treeCountTwo * treeCountThree * treeCountFour * treeCountFive
 	waitGroup.Done()
 }
 
