@@ -6,6 +6,8 @@ import (
 )
 
 func main() {
+	puzzleInput := LoadPuzzleInput()
+
 	waitCount := 2
 	waitGroup := &sync.WaitGroup{}
 	waitGroup.Add(waitCount)
@@ -21,7 +23,7 @@ func main() {
 
 	waitGroup.Wait()
 
-	fmt.Printf("part one: %d, part two: %d\n", partOneResult, partTwoResult)
+	fmt.Printf("input: %v, part one: %d, part two: %d\n", puzzleInput, partOneResult, partTwoResult)
 }
 
 func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
@@ -32,4 +34,8 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	channel <- 1
 	waitGroup.Done()
+}
+
+func LoadPuzzleInput() string {
+	return ""
 }
