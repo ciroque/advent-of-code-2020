@@ -83,12 +83,9 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 
 func ValidateAndCountPasswords(validator func(data *PasswordData)) int {
 	input := LoadPuzzleInput()
-	for _, passwordData := range input {
-		validator(passwordData)
-	}
-
 	count := 0
 	for _, passwordData := range input {
+		validator(passwordData)
 		if passwordData.Valid {
 			count = count + 1
 		}
