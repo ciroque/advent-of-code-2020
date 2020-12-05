@@ -18,13 +18,14 @@ type PasswordData struct {
 }
 
 func main() {
-	waitCount := 2
+	waitCount := 3
 	waitGroup := &sync.WaitGroup{}
 	waitGroup.Add(waitCount)
 
 	partOneChannel := make(chan int)
 	partTwoChannel := make(chan int)
 
+	go DoExamples(waitGroup)
 	go DoPartOne(partOneChannel, waitGroup)
 	go DoPartTwo(partTwoChannel, waitGroup)
 
@@ -36,9 +37,62 @@ func main() {
 	fmt.Printf("part one: %d, part two: %d\n", partOneResult, partTwoResult)
 }
 
-func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 2
+func DoExamples(waitGroup *sync.WaitGroup) {
+	example1 :=
+		&PasswordData{
+			MinOccurrences:    1,
+			MaxOccurrences:    3,
+			RequiredCharacter: 'a',
+			Password:          "abcde",
+			Valid:             false,
+		}
+	example2 := &PasswordData{
+		MinOccurrences:    1,
+		MaxOccurrences:    3,
+		RequiredCharacter: 'b',
+		Password:          "cdefg",
+		Valid:             false,
+	}
+
+	example3 := &PasswordData{
+		MinOccurrences:    2,
+		MaxOccurrences:    9,
+		RequiredCharacter: 'c',
+		Password:          "ccccccccc",
+		Valid:             false,
+	}
+
+	ValidateTobogganRentalPassword(example1)
+	ValidateTobogganRentalPassword(example2)
+	ValidateTobogganRentalPassword(example3)
+
+	fmt.Fprintf(os.Stdout, "\n\texample1: { expected: true, actual: %t }\n\texample2: { expected: false, actual: %t }\n\texample3: { expected: false, actual: %t }\n\n", example1.Valid, example2.Valid, example3.Valid)
+
 	waitGroup.Done()
+}
+
+func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+	input := LoadPuzzleInput()
+	for _, passwordData := range input {
+		ValidateTobogganRentalPassword(passwordData)
+	}
+
+	count := 0
+	for _, passwordData := range input {
+		if passwordData.Valid {
+			count = count + 1
+		}
+	}
+
+	channel <- count
+	waitGroup.Done()
+}
+
+func ValidateTobogganRentalPassword(passwordData *PasswordData) {
+	requiredCharacter := uint8(passwordData.RequiredCharacter)
+	firstPosition := passwordData.Password[passwordData.MinOccurrences-1] == requiredCharacter
+	secondPosition := passwordData.Password[passwordData.MaxOccurrences-1] == requiredCharacter
+	passwordData.Valid = secondPosition != firstPosition
 }
 
 func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
