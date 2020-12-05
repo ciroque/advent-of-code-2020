@@ -18,8 +18,6 @@ type PasswordData struct {
 }
 
 func main() {
-	puzzleInput := LoadPuzzleInput()
-
 	waitCount := 2
 	waitGroup := &sync.WaitGroup{}
 	waitGroup.Add(waitCount)
@@ -27,7 +25,7 @@ func main() {
 	partOneChannel := make(chan int)
 	partTwoChannel := make(chan int)
 
-	go DoPartOne(puzzleInput, partOneChannel, waitGroup)
+	go DoPartOne(partOneChannel, waitGroup)
 	go DoPartTwo(partTwoChannel, waitGroup)
 
 	partOneResult := <-partOneChannel
@@ -43,9 +41,10 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 }
 
-func DoPartOne(input []*PasswordData, channel chan int, waitGroup *sync.WaitGroup) {
+func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
+	input := LoadPuzzleInput()
 	for _, passwordData := range input {
-		ValidatePassword(passwordData)
+		ValidateSledRentalPassword(passwordData)
 	}
 
 	count := 0
@@ -59,7 +58,7 @@ func DoPartOne(input []*PasswordData, channel chan int, waitGroup *sync.WaitGrou
 	waitGroup.Done()
 }
 
-func ValidatePassword(passwordData *PasswordData) {
+func ValidateSledRentalPassword(passwordData *PasswordData) {
 	passwordCharacterMap := make(map[int32]int)
 	for _, character := range passwordData.Password {
 		_, found := passwordCharacterMap[character]
