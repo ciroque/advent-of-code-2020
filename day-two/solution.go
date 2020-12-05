@@ -71,34 +71,20 @@ func DoExamples(waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 }
 
-func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	input := LoadPuzzleInput()
-	for _, passwordData := range input {
-		ValidateTobogganRentalPassword(passwordData)
-	}
-
-	count := 0
-	for _, passwordData := range input {
-		if passwordData.Valid {
-			count = count + 1
-		}
-	}
-
-	channel <- count
-	waitGroup.Done()
-}
-
-func ValidateTobogganRentalPassword(passwordData *PasswordData) {
-	requiredCharacter := uint8(passwordData.RequiredCharacter)
-	firstPosition := passwordData.Password[passwordData.MinOccurrences-1] == requiredCharacter
-	secondPosition := passwordData.Password[passwordData.MaxOccurrences-1] == requiredCharacter
-	passwordData.Valid = secondPosition != firstPosition
-}
-
 func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
+	channel <- ValidateAndCountPasswords(ValidateSledRentalPassword)
+	waitGroup.Done()
+}
+
+func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+	channel <- ValidateAndCountPasswords(ValidateTobogganRentalPassword)
+	waitGroup.Done()
+}
+
+func ValidateAndCountPasswords(validator func(data *PasswordData)) int {
 	input := LoadPuzzleInput()
 	for _, passwordData := range input {
-		ValidateSledRentalPassword(passwordData)
+		validator(passwordData)
 	}
 
 	count := 0
@@ -108,8 +94,7 @@ func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 		}
 	}
 
-	channel <- count
-	waitGroup.Done()
+	return count
 }
 
 func ValidateSledRentalPassword(passwordData *PasswordData) {
@@ -124,6 +109,13 @@ func ValidateSledRentalPassword(passwordData *PasswordData) {
 	}
 
 	passwordData.Valid = passwordCharacterMap[passwordData.RequiredCharacter] <= passwordData.MaxOccurrences && passwordCharacterMap[passwordData.RequiredCharacter] >= passwordData.MinOccurrences
+}
+
+func ValidateTobogganRentalPassword(passwordData *PasswordData) {
+	requiredCharacter := uint8(passwordData.RequiredCharacter)
+	firstPosition := passwordData.Password[passwordData.MinOccurrences-1] == requiredCharacter
+	secondPosition := passwordData.Password[passwordData.MaxOccurrences-1] == requiredCharacter
+	passwordData.Valid = secondPosition != firstPosition
 }
 
 func LoadPuzzleInput() []*PasswordData {
