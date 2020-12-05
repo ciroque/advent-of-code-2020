@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"sync"
 )
 
@@ -37,5 +38,12 @@ func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 }
 
 func LoadPuzzleInput() string {
+	filename := "puzzle-input.dat"
+	fd, err := os.Open(filename)
+	if err != nil {
+		panic(fmt.Sprintf("open %s: %v", filename, err))
+	}
+	defer fd.Close()
+
 	return ""
 }
