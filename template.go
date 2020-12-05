@@ -28,13 +28,13 @@ func main() {
 	fmt.Printf("input: %v, part one: %d, part two: %d\n", puzzleInput, partOneResult, partTwoResult)
 }
 
-func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 2
+func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
+	channel <- 1
 	waitGroup.Done()
 }
 
-func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 1
+func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+	channel <- 2
 	waitGroup.Done()
 }
 
