@@ -20,8 +20,8 @@ func main() {
 	go DoPartOne(partOneChannel, waitGroup)
 	go DoPartTwo(partTwoChannel, waitGroup)
 
-	partOneResult := <- partOneChannel
-	partTwoResult := <- partTwoChannel
+	partOneResult := <-partOneChannel
+	partTwoResult := <-partTwoChannel
 
 	waitGroup.Wait()
 
@@ -44,12 +44,16 @@ func LoadPuzzleInput() string {
 	if err != nil {
 		panic(fmt.Sprintf("open %s: %v", filename, err))
 	}
-	defer fd.Close()
 
 	scanner := bufio.NewScanner(fd)
 	for scanner.Scan() {
 		line := scanner.Text()
 		fmt.Println(line)
+	}
+
+	err = fd.Close()
+	if err != nil {
+		fmt.Println(fmt.Errorf("error closing file: %s: %v", filename, err))
 	}
 
 	return ""
