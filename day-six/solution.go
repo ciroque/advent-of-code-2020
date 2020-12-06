@@ -61,11 +61,7 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 
 	processResponse := func(response string, answers map[int32]int) {
 		for _, question := range response {
-			if _, found := answers[question]; found {
-				answers[question] = answers[question] + 1
-			} else {
-				answers[question] = 1
-			}
+			answers[question] = answers[question] + 1
 		}
 	}
 
