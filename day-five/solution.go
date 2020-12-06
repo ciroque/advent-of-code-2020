@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 	"sync"
 )
 
@@ -68,7 +69,33 @@ func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 }
 
 func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 2
+	puzzleInput := LoadPuzzleInput()
+	seatIds := BuildSeatIdsMap()
+
+	for _, input := range puzzleInput {
+		seat := ProcessBinarySpacePartitioning(input)
+		seatId := seat.CalculateSeatId()
+		seatIds[seatId] = true
+	}
+
+	filledSeats := []int{}
+	for id, sid := range seatIds {
+		if sid {
+			filledSeats = append(filledSeats, id)
+		}
+	}
+
+	sort.Ints(filledSeats)
+
+	mySeatId := 0
+	for index := 1; index < len(filledSeats); index++ {
+		if filledSeats[index]-filledSeats[index-1] != 1 {
+			mySeatId = filledSeats[index]
+			break
+		}
+	}
+
+	channel <- mySeatId - 1
 	waitGroup.Done()
 }
 
@@ -99,6 +126,21 @@ func ProcessBinarySpacePartitioning(seatSpecification string) Seat {
 		row:    rows[0],
 		column: columns[0],
 	}
+}
+
+func BuildSeatIdsMap() map[int]bool {
+	rowCount := 128
+	columnCount := 8
+
+	seatIds := make(map[int]bool)
+
+	for rowIndex := 0; rowIndex < rowCount; rowIndex++ {
+		for columnIndex := 0; columnIndex < columnCount; columnIndex++ {
+			seatIds[rowIndex*8+columnIndex] = false
+		}
+	}
+
+	return seatIds
 }
 
 func BuildRowsArray() []int {
