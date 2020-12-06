@@ -82,7 +82,7 @@ func HasValidValues(passport *Passport) bool {
 
 	for key, value := range passport.Fields {
 		if !validators[key](value) {
-			fmt.Println("failed", key, value)
+			//fmt.Println("failed", key, value)
 			return false
 		}
 	}
