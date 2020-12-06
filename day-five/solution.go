@@ -78,9 +78,9 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 		seatIds[seatId] = true
 	}
 
-	filledSeats := []int{}
-	for id, sid := range seatIds {
-		if sid {
+	var filledSeats []int
+	for id, filled := range seatIds {
+		if filled {
 			filledSeats = append(filledSeats, id)
 		}
 	}
@@ -90,12 +90,12 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 	mySeatId := 0
 	for index := 1; index < len(filledSeats); index++ {
 		if filledSeats[index]-filledSeats[index-1] != 1 {
-			mySeatId = filledSeats[index]
+			mySeatId = filledSeats[index] - 1
 			break
 		}
 	}
 
-	channel <- mySeatId - 1
+	channel <- mySeatId
 	waitGroup.Done()
 }
 
