@@ -1,13 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"github.com/ciroque/advent-of-code-2020/support"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"sync"
 )
 
 func main() {
-	puzzleInput := loadPuzzleInput()
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
+	_ = loadPuzzleInput()
 
 	waitCount := 3
 	var waitGroup sync.WaitGroup
@@ -25,7 +28,7 @@ func main() {
 
 	waitGroup.Wait()
 
-	fmt.Printf("input: %v, part one: %d, part two: %d\n", puzzleInput, partOneResult, partTwoResult)
+	log.Info().Int("part-one", partOneResult).Int("part-two", partTwoResult).Msg("day seven")
 }
 
 func doExamples(waitGroup *sync.WaitGroup) {
