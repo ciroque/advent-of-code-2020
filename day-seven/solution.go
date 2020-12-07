@@ -7,18 +7,18 @@ import (
 )
 
 func main() {
-	puzzleInput := LoadPuzzleInput()
+	puzzleInput := loadPuzzleInput()
 
 	waitCount := 3
-	waitGroup := &sync.WaitGroup{}
+	var waitGroup sync.WaitGroup
 	waitGroup.Add(waitCount)
 
 	partOneChannel := make(chan int)
 	partTwoChannel := make(chan int)
 
-	go DoExamples(waitGroup)
-	go DoPartOne(partOneChannel, waitGroup)
-	go DoPartTwo(partTwoChannel, waitGroup)
+	go doExamples(&waitGroup)
+	go doPartOne(partOneChannel, &waitGroup)
+	go doPartTwo(partTwoChannel, &waitGroup)
 
 	partOneResult := <-partOneChannel
 	partTwoResult := <-partTwoChannel
@@ -28,22 +28,22 @@ func main() {
 	fmt.Printf("input: %v, part one: %d, part two: %d\n", puzzleInput, partOneResult, partTwoResult)
 }
 
-func DoExamples(waitGroup *sync.WaitGroup) {
+func doExamples(waitGroup *sync.WaitGroup) {
 
 	waitGroup.Done()
 }
 
-func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
+func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	channel <- 1
 	waitGroup.Done()
 }
 
-func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 	channel <- 2
 	waitGroup.Done()
 }
 
-func LoadPuzzleInput() string {
+func loadPuzzleInput() string {
 	filename := "puzzle-input.dat"
 	return support.ReadFile(filename)
 }

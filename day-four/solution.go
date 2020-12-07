@@ -17,16 +17,16 @@ type Passport struct {
 
 func main() {
 	waitCount := 2
-	waitGroup := &sync.WaitGroup{}
+	var waitGroup sync.WaitGroup
 	waitGroup.Add(waitCount)
 
 	partOneChannel := make(chan int)
 	partTwoChannel := make(chan int)
 
-	RunTestValues()
+	runTestValues()
 
-	go DoPartOne(partOneChannel, waitGroup)
-	go DoPartTwo(partTwoChannel, waitGroup)
+	go doPartOne(partOneChannel, &waitGroup)
+	go doPartTwo(partTwoChannel, &waitGroup)
 
 	partOneResult := <-partOneChannel
 	partTwoResult := <-partTwoChannel
@@ -36,12 +36,12 @@ func main() {
 	fmt.Printf("part one: %d, part two: %d\n", partOneResult, partTwoResult)
 }
 
-func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
+func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	validPassportCount := 0
-	passports := LoadPuzzleInput()
+	passports := loadPuzzleInput()
 
 	for _, passport := range passports {
-		if HasRequiredFields(passport) {
+		if hasRequiredFields(passport) {
 			validPassportCount = validPassportCount + 1
 		}
 	}
@@ -50,13 +50,13 @@ func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 }
 
-func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 	validPassportCount := 0
-	passports := LoadPuzzleInput()
+	passports := loadPuzzleInput()
 
 	for _, passport := range passports {
-		hasFields := HasRequiredFields(passport)
-		hasValues := HasValidValues(passport)
+		hasFields := hasRequiredFields(passport)
+		hasValues := hasValidValues(passport)
 		if hasFields && hasValues {
 			validPassportCount = validPassportCount + 1
 		}
@@ -66,7 +66,7 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 }
 
-func HasRequiredFields(passport *Passport) bool {
+func hasRequiredFields(passport *Passport) bool {
 	validFields := []string{"byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"}
 
 	for _, field := range validFields {
@@ -77,8 +77,8 @@ func HasRequiredFields(passport *Passport) bool {
 	return true
 }
 
-func HasValidValues(passport *Passport) bool {
-	validators := BuildValidationMap()
+func hasValidValues(passport *Passport) bool {
+	validators := buildValidationMap()
 
 	for key, value := range passport.Fields {
 		if !validators[key](value) {
@@ -90,7 +90,7 @@ func HasValidValues(passport *Passport) bool {
 	return true
 }
 
-func LoadPuzzleInput() []*Passport {
+func loadPuzzleInput() []*Passport {
 	//filename := "example-input.dat"
 	filename := "puzzle-input.dat"
 	fd, err := os.Open(filename)
@@ -125,7 +125,7 @@ func LoadPuzzleInput() []*Passport {
 	return passports
 }
 
-func BuildValidationMap() map[string]func(string) bool {
+func buildValidationMap() map[string]func(string) bool {
 	validators := map[string]func(string) bool{}
 
 	validators["byr"] = func(s string) bool {
@@ -178,8 +178,8 @@ func BuildValidationMap() map[string]func(string) bool {
 	return validators
 }
 
-func RunTestValues() bool {
-	validators := BuildValidationMap()
+func runTestValues() bool {
+	validators := buildValidationMap()
 	valid := false
 
 	valid = validators["byr"]("2002") //valid

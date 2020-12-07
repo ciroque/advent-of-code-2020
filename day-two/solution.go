@@ -19,15 +19,15 @@ type PasswordData struct {
 
 func main() {
 	waitCount := 3
-	waitGroup := &sync.WaitGroup{}
+	var waitGroup sync.WaitGroup
 	waitGroup.Add(waitCount)
 
 	partOneChannel := make(chan int)
 	partTwoChannel := make(chan int)
 
-	go DoExamples(waitGroup)
-	go DoPartOne(partOneChannel, waitGroup)
-	go DoPartTwo(partTwoChannel, waitGroup)
+	go doExamples(&waitGroup)
+	go doPartOne(partOneChannel, &waitGroup)
+	go doPartTwo(partTwoChannel, &waitGroup)
 
 	partOneResult := <-partOneChannel
 	partTwoResult := <-partTwoChannel
@@ -37,7 +37,7 @@ func main() {
 	fmt.Printf("part one: %d, part two: %d\n", partOneResult, partTwoResult)
 }
 
-func DoExamples(waitGroup *sync.WaitGroup) {
+func doExamples(waitGroup *sync.WaitGroup) {
 	example1 :=
 		&PasswordData{
 			MinOccurrences:    1,
@@ -62,27 +62,27 @@ func DoExamples(waitGroup *sync.WaitGroup) {
 		Valid:             false,
 	}
 
-	ValidateTobogganRentalPassword(example1)
-	ValidateTobogganRentalPassword(example2)
-	ValidateTobogganRentalPassword(example3)
+	validateTobogganRentalPassword(example1)
+	validateTobogganRentalPassword(example2)
+	validateTobogganRentalPassword(example3)
 
 	fmt.Fprintf(os.Stdout, "\n\texample1: { expected: true, actual: %t }\n\texample2: { expected: false, actual: %t }\n\texample3: { expected: false, actual: %t }\n\n", example1.Valid, example2.Valid, example3.Valid)
 
 	waitGroup.Done()
 }
 
-func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- ValidateAndCountPasswords(ValidateSledRentalPassword)
+func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
+	channel <- validateAndCountPasswords(validateSledRentalPassword)
 	waitGroup.Done()
 }
 
-func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- ValidateAndCountPasswords(ValidateTobogganRentalPassword)
+func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+	channel <- validateAndCountPasswords(validateTobogganRentalPassword)
 	waitGroup.Done()
 }
 
-func ValidateAndCountPasswords(validator func(data *PasswordData)) int {
-	input := LoadPuzzleInput()
+func validateAndCountPasswords(validator func(data *PasswordData)) int {
+	input := loadPuzzleInput()
 	count := 0
 	for _, passwordData := range input {
 		validator(passwordData)
@@ -94,7 +94,7 @@ func ValidateAndCountPasswords(validator func(data *PasswordData)) int {
 	return count
 }
 
-func ValidateSledRentalPassword(passwordData *PasswordData) {
+func validateSledRentalPassword(passwordData *PasswordData) {
 	passwordCharacterMap := make(map[int32]int)
 	for _, character := range passwordData.Password {
 		_, found := passwordCharacterMap[character]
@@ -108,14 +108,14 @@ func ValidateSledRentalPassword(passwordData *PasswordData) {
 	passwordData.Valid = passwordCharacterMap[passwordData.RequiredCharacter] <= passwordData.MaxOccurrences && passwordCharacterMap[passwordData.RequiredCharacter] >= passwordData.MinOccurrences
 }
 
-func ValidateTobogganRentalPassword(passwordData *PasswordData) {
+func validateTobogganRentalPassword(passwordData *PasswordData) {
 	requiredCharacter := uint8(passwordData.RequiredCharacter)
 	firstPosition := passwordData.Password[passwordData.MinOccurrences-1] == requiredCharacter
 	secondPosition := passwordData.Password[passwordData.MaxOccurrences-1] == requiredCharacter
 	passwordData.Valid = secondPosition != firstPosition
 }
 
-func LoadPuzzleInput() []*PasswordData {
+func loadPuzzleInput() []*PasswordData {
 	passwordData := make([]*PasswordData, 0)
 	filename := "puzzle-input.dat"
 	fd, err := os.Open(filename)
@@ -125,7 +125,7 @@ func LoadPuzzleInput() []*PasswordData {
 
 	scanner := bufio.NewScanner(fd)
 	for scanner.Scan() {
-		passwordData = append(passwordData, ParsePuzzleInputLine(scanner.Text()))
+		passwordData = append(passwordData, parsePuzzleInputLine(scanner.Text()))
 	}
 
 	err = fd.Close()
@@ -136,7 +136,7 @@ func LoadPuzzleInput() []*PasswordData {
 	return passwordData
 }
 
-func ParsePuzzleInputLine(line string) *PasswordData {
+func parsePuzzleInputLine(line string) *PasswordData {
 	separator := " "
 	occurrenceRangeIndex := 0
 	characterIndex := 1

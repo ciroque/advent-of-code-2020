@@ -11,17 +11,17 @@ import (
 
 func main() {
 	goal := 2020
-	data := LoadPuzzleInput()
+	data := loadPuzzleInput()
 
 	waitCount := 2
-	waitGroup := &sync.WaitGroup{}
+	var waitGroup sync.WaitGroup
 	waitGroup.Add(waitCount)
 
 	partOneChannel := make(chan int)
 	partTwoChannel := make(chan int)
 
-	go DoPartOne(data, goal, partOneChannel, waitGroup)
-	go DoPartTwo(data, goal, partTwoChannel, waitGroup)
+	go doPartOne(data, goal, partOneChannel, &waitGroup)
+	go doPartTwo(data, goal, partTwoChannel, &waitGroup)
 
 	partOneResult := <-partOneChannel
 	partTwoResult := <-partTwoChannel
@@ -31,7 +31,7 @@ func main() {
 	fmt.Printf("part one: %d, part two: %d\n", partOneResult, partTwoResult)
 }
 
-func LoadPuzzleInput() []int {
+func loadPuzzleInput() []int {
 	filename := "puzzle-input.dat"
 	fd, err := os.Open(filename)
 	if err != nil {
@@ -53,14 +53,14 @@ func LoadPuzzleInput() []int {
 	return numbers
 }
 
-func DoPartOne(numbers []int, goal int, partOneChannel chan int, waitGroup *sync.WaitGroup) {
+func doPartOne(numbers []int, goal int, partOneChannel chan int, waitGroup *sync.WaitGroup) {
 	numberMap := make(map[int]int)
 
 	for _, number := range numbers {
 		numberMap[number] = number
 	}
 
-	first, second, found := FindPair(numberMap, goal)
+	first, second, found := findPair(numberMap, goal)
 	if !found {
 		message := fmt.Errorf("there was no pair in the list that meet the goal of %d", goal)
 		fmt.Println(message)
@@ -73,7 +73,7 @@ func DoPartOne(numbers []int, goal int, partOneChannel chan int, waitGroup *sync
 	waitGroup.Done()
 }
 
-func FindPair(numbers map[int]int, goal int) (first int, second int, found bool) {
+func findPair(numbers map[int]int, goal int) (first int, second int, found bool) {
 	for number := range numbers {
 		complement := goal - number
 		_, exists := numbers[complement]
@@ -85,12 +85,12 @@ func FindPair(numbers map[int]int, goal int) (first int, second int, found bool)
 	return 0, 0, false
 }
 
-func DoPartTwo(numbers []int, goal int, partTwoChannel chan int, waitGroup *sync.WaitGroup) {
+func doPartTwo(numbers []int, goal int, partTwoChannel chan int, waitGroup *sync.WaitGroup) {
 	sortedNumbers := make([]int, len(numbers))
 	copy(sortedNumbers, numbers)
 	sort.Ints(sortedNumbers)
 
-	first, second, third, found := FindTriple(sortedNumbers, goal)
+	first, second, third, found := findTriple(sortedNumbers, goal)
 	if !found {
 		message := fmt.Errorf("there was no triple in the list that meet the goal of %d", goal)
 		fmt.Println(message)
@@ -101,7 +101,7 @@ func DoPartTwo(numbers []int, goal int, partTwoChannel chan int, waitGroup *sync
 	waitGroup.Done()
 }
 
-func FindTriple(numbers []int, goal int) (int, int, int, bool) {
+func findTriple(numbers []int, goal int) (int, int, int, bool) {
 	for index, number := range numbers {
 		lowIndex := index + 1
 		highIndex := len(numbers) - 1

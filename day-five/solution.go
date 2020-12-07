@@ -19,15 +19,15 @@ func (s Seat) CalculateSeatId() int {
 
 func main() {
 	waitCount := 3
-	waitGroup := &sync.WaitGroup{}
+	var waitGroup sync.WaitGroup
 	waitGroup.Add(waitCount)
 
 	partOneChannel := make(chan int)
 	partTwoChannel := make(chan int)
 
-	go DoExamples(waitGroup)
-	go DoPartOne(partOneChannel, waitGroup)
-	go DoPartTwo(partTwoChannel, waitGroup)
+	go doExamples(&waitGroup)
+	go doPartOne(partOneChannel, &waitGroup)
+	go doPartTwo(partTwoChannel, &waitGroup)
 
 	partOneResult := <-partOneChannel
 	partTwoResult := <-partTwoChannel
@@ -37,7 +37,7 @@ func main() {
 	fmt.Printf("part one: %d, part two: %d\n", partOneResult, partTwoResult)
 }
 
-func DoExamples(waitGroup *sync.WaitGroup) {
+func doExamples(waitGroup *sync.WaitGroup) {
 	examples := []string{
 		"BFFFBBFRRR",
 		"FFFBBBFRRR",
@@ -45,19 +45,19 @@ func DoExamples(waitGroup *sync.WaitGroup) {
 	}
 
 	for _, example := range examples {
-		seat := ProcessBinarySpacePartitioning(example)
+		seat := processBinarySpacePartitioning(example)
 		fmt.Println(example, seat.row, seat.column, seat.CalculateSeatId())
 	}
 
 	waitGroup.Done()
 }
 
-func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
+func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	highestId := 0
-	puzzleInput := LoadPuzzleInput()
+	puzzleInput := loadPuzzleInput()
 
 	for _, input := range puzzleInput {
-		seat := ProcessBinarySpacePartitioning(input)
+		seat := processBinarySpacePartitioning(input)
 		seatId := seat.CalculateSeatId()
 		if seatId > highestId {
 			highestId = seatId
@@ -68,12 +68,12 @@ func DoPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 }
 
-func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	puzzleInput := LoadPuzzleInput()
-	seatIds := BuildSeatIdsMap()
+func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+	puzzleInput := loadPuzzleInput()
+	seatIds := buildSeatIdsMap()
 
 	for _, input := range puzzleInput {
-		seat := ProcessBinarySpacePartitioning(input)
+		seat := processBinarySpacePartitioning(input)
 		seatId := seat.CalculateSeatId()
 		seatIds[seatId] = true
 	}
@@ -99,7 +99,7 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 }
 
-func ProcessBinarySpacePartitioning(seatSpecification string) Seat {
+func processBinarySpacePartitioning(seatSpecification string) Seat {
 	front := func(slice []int) []int {
 		return slice[0:(len(slice) / 2)]
 	}
@@ -108,8 +108,8 @@ func ProcessBinarySpacePartitioning(seatSpecification string) Seat {
 		return slice[(len(slice) / 2):]
 	}
 
-	rows := BuildRowsArray()
-	columns := BuildColumnsArray()
+	rows := buildRowsArray()
+	columns := buildColumnsArray()
 	for _, char := range seatSpecification {
 		if char == 'F' {
 			rows = front(rows)
@@ -128,7 +128,7 @@ func ProcessBinarySpacePartitioning(seatSpecification string) Seat {
 	}
 }
 
-func BuildSeatIdsMap() map[int]bool {
+func buildSeatIdsMap() map[int]bool {
 	rowCount := 128
 	columnCount := 8
 
@@ -143,7 +143,7 @@ func BuildSeatIdsMap() map[int]bool {
 	return seatIds
 }
 
-func BuildRowsArray() []int {
+func buildRowsArray() []int {
 	rows := make([]int, 128)
 	for index, _ := range rows {
 		rows[index] = index
@@ -152,7 +152,7 @@ func BuildRowsArray() []int {
 	return rows
 }
 
-func BuildColumnsArray() []int {
+func buildColumnsArray() []int {
 	columns := make([]int, 8)
 	for index, _ := range columns {
 		columns[index] = index
@@ -161,7 +161,7 @@ func BuildColumnsArray() []int {
 	return columns
 }
 
-func LoadPuzzleInput() []string {
+func loadPuzzleInput() []string {
 	//filename := "example-input.dat"
 	filename := "puzzle-input.dat"
 	fd, err := os.Open(filename)
