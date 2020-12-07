@@ -1,9 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"github.com/ciroque/advent-of-code-2020/support"
 	"sync"
 )
 
@@ -46,21 +45,5 @@ func DoPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 
 func LoadPuzzleInput() string {
 	filename := "puzzle-input.dat"
-	fd, err := os.Open(filename)
-	if err != nil {
-		panic(fmt.Sprintf("open %s: %v", filename, err))
-	}
-
-	scanner := bufio.NewScanner(fd)
-	for scanner.Scan() {
-		line := scanner.Text()
-		fmt.Println(line)
-	}
-
-	err = fd.Close()
-	if err != nil {
-		fmt.Println(fmt.Errorf("error closing file: %s: %v", filename, err))
-	}
-
-	return ""
+	return support.ReadFile(filename)
 }
