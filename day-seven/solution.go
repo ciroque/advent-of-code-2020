@@ -8,6 +8,10 @@ import (
 	"sync"
 )
 
+type Node struct {
+	children []Node
+}
+
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
@@ -31,7 +35,6 @@ func main() {
 }
 
 func doExamples(waitGroup *sync.WaitGroup) {
-
 	waitGroup.Done()
 }
 
@@ -39,17 +42,9 @@ func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	myGoldBag := "shiny gold"
 	puzzleInput := loadPuzzleInput()
 
-	bags := map[string]int{}
-	for _, line := range puzzleInput {
-		if len(line) > 0 {
-			bags[extractSubject(line)]++
-		}
-	}
-
 	outermostContainers := findContainers(puzzleInput, myGoldBag)
 
-	topLevelBags := map[string]int{}
-	count := findAllContainers(puzzleInput, outermostContainers, topLevelBags, bags)
+	count := findAllContainers(puzzleInput, outermostContainers)
 
 	channel <- count
 	waitGroup.Done()
@@ -71,15 +66,14 @@ func findContainers(puzzleInput []string, target string) map[string]int {
 	return containers
 }
 
-func findAllContainers(puzzleInput []string, containers map[string]int, topLevelBags map[string]int, bags map[string]int) int {
+func findAllContainers(puzzleInput []string, containers map[string]int) int {
 	count := 0
 
-	for container, _ := range containers {
+	for container := range containers {
 		nextContainers := findContainers(puzzleInput, container)
 		if len(nextContainers) > 0 {
-			count = count + findAllContainers(puzzleInput, nextContainers, topLevelBags, bags)
+			count = count + findAllContainers(puzzleInput, nextContainers)
 		} else {
-			topLevelBags[container]++
 			count = count + 1
 		}
 	}
