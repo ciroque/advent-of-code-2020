@@ -8,9 +8,7 @@ import (
 	"sync"
 )
 
-type Node struct {
-	children []Node
-}
+//var all map[string]map[string]int
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -19,35 +17,58 @@ func main() {
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(waitCount)
 
+	exampleChannel := make(chan int)
 	partOneChannel := make(chan int)
 	partTwoChannel := make(chan int)
 
-	go doExamples(&waitGroup)
+	go doExamples(exampleChannel, &waitGroup)
 	go doPartOne(partOneChannel, &waitGroup)
 	go doPartTwo(partTwoChannel, &waitGroup)
 
+	exampleResult := <-exampleChannel
 	partOneResult := <-partOneChannel
 	partTwoResult := <-partTwoChannel
 
 	waitGroup.Wait()
 
-	log.Info().Int("part-one", partOneResult).Int("part-two", partTwoResult).Msg("day seven")
+	log.Info().Int("example", exampleResult).Int("part-one", partOneResult).Int("part-two", partTwoResult).Msg("day seven")
 }
 
-func doExamples(waitGroup *sync.WaitGroup) {
+func doExamples(channel chan int, waitGroup *sync.WaitGroup) {
+	puzzleInput := loadExamplePuzzleInput()
+	channel <- len(puzzleInput)
 	waitGroup.Done()
 }
 
 func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
-	myGoldBag := "shiny gold"
+	myBag := "shiny gold"
 	puzzleInput := loadPuzzleInput()
-
-	outermostContainers := findContainers(puzzleInput, myGoldBag)
-
-	count := findAllContainers(puzzleInput, outermostContainers)
+	graph := buildGraph(puzzleInput, myBag)
+	count := len(graph) - 1 // Should not include the `myBag`
 
 	channel <- count
 	waitGroup.Done()
+}
+
+func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+	myBag := "shiny gold"
+	puzzleInput := loadPuzzleInput()
+	graph := buildGraph(puzzleInput, myBag)
+
+	count := 0
+
+	for _, v := range graph {
+		count = count + len(v)
+	}
+
+	channel <- count
+	waitGroup.Done()
+}
+
+func buildGraph(puzzleInput []string, myBag string) map[string]map[string]int {
+	graph := map[string]map[string]int{}
+	findAllContainers(puzzleInput, map[string]int{myBag: 1}, graph)
+	return graph
 }
 
 func extractSubject(line string) string {
@@ -55,39 +76,38 @@ func extractSubject(line string) string {
 	return strings.Join(strings.Split(line, separator)[0:2], separator)
 }
 
-func findContainers(puzzleInput []string, target string) map[string]int {
+func findContainers(puzzleInput []string, target string, graph map[string]map[string]int) map[string]int {
+	if _, found := graph[target]; !found {
+		graph[target] = map[string]int{}
+	}
+
 	containers := map[string]int{}
 	for _, line := range puzzleInput {
 		if foundAt := strings.Index(line, target); foundAt > 0 {
-			containers[extractSubject(line)]++
+			subject := extractSubject(line)
+			graph[target][subject]++
+			containers[subject]++
 		}
 	}
 
 	return containers
 }
 
-func findAllContainers(puzzleInput []string, containers map[string]int) int {
-	count := 0
-
+func findAllContainers(puzzleInput []string, containers map[string]int, graph map[string]map[string]int) {
 	for container := range containers {
-		nextContainers := findContainers(puzzleInput, container)
+		nextContainers := findContainers(puzzleInput, container, graph)
 		if len(nextContainers) > 0 {
-			count = count + findAllContainers(puzzleInput, nextContainers)
-		} else {
-			count = count + 1
+			findAllContainers(puzzleInput, nextContainers, graph)
 		}
 	}
-
-	return count
 }
 
-func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 2
-	waitGroup.Done()
+func loadExamplePuzzleInput() []string {
+	filename := "example-input.dat"
+	return support.ReadFileIntoLines(filename)
 }
 
 func loadPuzzleInput() []string {
-	//filename := "example-input.dat"
 	filename := "puzzle-input.dat"
 	return support.ReadFileIntoLines(filename)
 }
