@@ -5,7 +5,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"sync"
+	"time"
 )
+
+type Result struct {
+	answer   int
+	duration int64
+}
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -16,8 +22,8 @@ func main() {
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(waitCount)
 
-	partOneChannel := make(chan int)
-	partTwoChannel := make(chan int)
+	partOneChannel := make(chan Result)
+	partTwoChannel := make(chan Result)
 
 	go doExamples(&waitGroup)
 	go doPartOne(partOneChannel, &waitGroup)
@@ -28,7 +34,13 @@ func main() {
 
 	waitGroup.Wait()
 
-	log.Info().Int("part-one", partOneResult).Int("part-two", partTwoResult).Msg("day ...")
+	log.
+		Info().
+		Int("part-one-answer", partOneResult.answer).
+		Int64("part-one-duration", partOneResult.duration).
+		Int("part-two-answer", partTwoResult.answer).
+		Int64("part-two-duration", partTwoResult.duration).
+		Msg("day ...")
 }
 
 func doExamples(waitGroup *sync.WaitGroup) {
@@ -36,13 +48,23 @@ func doExamples(waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 }
 
-func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 1
+func doPartOne(channel chan Result, waitGroup *sync.WaitGroup) {
+	start := time.Now()
+
+	channel <- Result{
+		answer:   1,
+		duration: time.Since(start).Nanoseconds(),
+	}
 	waitGroup.Done()
 }
 
-func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 2
+func doPartTwo(channel chan Result, waitGroup *sync.WaitGroup) {
+	start := time.Now()
+
+	channel <- Result{
+		answer:   1,
+		duration: time.Since(start).Nanoseconds(),
+	}
 	waitGroup.Done()
 }
 
