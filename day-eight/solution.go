@@ -57,11 +57,12 @@ func doExamples(waitGroup *sync.WaitGroup) {
 func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	puzzleInput := loadPuzzleInput()
 	instructions := buildInstructionList(puzzleInput)
-	accumulator, cycle := execute(instructions)
-	if cycle == true {
-		log.Info().Msg("Cycle detected")
+	if accumulator, cycleFound, _ := execute(instructions); cycleFound {
+		channel <- accumulator
+	} else {
+		channel <- -1
 	}
-	channel <- accumulator
+
 	waitGroup.Done()
 }
 
@@ -74,8 +75,7 @@ func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 		foundProgramEnd := false
 		for _, ip := range ops {
 			instructions[ip].swapOp()
-			acc, foundProgramEnd = execute(instructions)
-			if foundProgramEnd {
+			if acc, _, foundProgramEnd = execute(instructions); foundProgramEnd {
 				return true, acc
 			}
 			instructions[ip].restoreOp()
@@ -116,11 +116,11 @@ func buildInstructionList(puzzleInput []string) []Instruction {
 	return instructions
 }
 
-// returns int, int, bool
-// The instruction pointer
+// returns int, bool, bool
 // The accumulator
-// true if a instruction length + 1 found, false otherwise
-func execute(instructions []Instruction) (int, bool) {
+// true if cycle was found, false otherwise
+// true if instruction length + 1 found, false otherwise
+func execute(instructions []Instruction) (int, bool, bool) {
 	instructionPointer := 0
 	instructionCounts := map[int]int{}
 	for index := range instructions {
@@ -142,13 +142,13 @@ func execute(instructions []Instruction) (int, bool) {
 
 		instructionCounts[instructionPointer]++
 		if instructionCounts[instructionPointer] > 1 {
-			return accumulator, false
+			return accumulator, true, false
 		} else if instructionPointer == len(instructions) {
-			return accumulator, true
+			return accumulator, false, true
 		}
 	}
 
-	return accumulator, false
+	return accumulator, false, false
 }
 
 func findOps(instructions []Instruction, op string) []int {
