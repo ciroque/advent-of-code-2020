@@ -27,24 +27,6 @@ func (i *Instruction) restoreOp() {
 	i.Op = i.OriginalOp
 }
 
-func BuildInstructionList(puzzleInput []string) []Instruction {
-	parseLine := func(line string) Instruction {
-		parts := strings.Split(line, " ")
-		argument, _ := strconv.ParseInt(parts[1], 0, 0)
-		return Instruction{
-			Op:         parts[0],
-			Arg:        int(argument),
-			OriginalOp: parts[0],
-		}
-	}
-
-	var instructions []Instruction
-	for _, line := range puzzleInput {
-		instructions = append(instructions, parseLine(line))
-	}
-	return instructions
-}
-
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
@@ -74,7 +56,7 @@ func doExamples(waitGroup *sync.WaitGroup) {
 
 func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	puzzleInput := loadPuzzleInput()
-	instructions := BuildInstructionList(puzzleInput)
+	instructions := buildInstructionList(puzzleInput)
 	accumulator, cycle := executeFrom(instructions)
 	if cycle == true {
 		log.Info().Msg("Cycle detected")
@@ -85,7 +67,7 @@ func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 
 func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 	puzzleInput := loadPuzzleInput()
-	instructions := BuildInstructionList(puzzleInput)
+	instructions := buildInstructionList(puzzleInput)
 
 	speculate := func(ops []int) (bool, int) {
 		acc := 0
@@ -114,6 +96,24 @@ func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 
 	channel <- accumulator
 	waitGroup.Done()
+}
+
+func buildInstructionList(puzzleInput []string) []Instruction {
+	parseLine := func(line string) Instruction {
+		parts := strings.Split(line, " ")
+		argument, _ := strconv.ParseInt(parts[1], 0, 0)
+		return Instruction{
+			Op:         parts[0],
+			Arg:        int(argument),
+			OriginalOp: parts[0],
+		}
+	}
+
+	var instructions []Instruction
+	for _, line := range puzzleInput {
+		instructions = append(instructions, parseLine(line))
+	}
+	return instructions
 }
 
 // returns int, int, bool
