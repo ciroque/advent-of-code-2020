@@ -66,15 +66,28 @@ func doPartOne(channel chan int64, waitGroup *sync.WaitGroup) {
 	numbers := buildNumberList(puzzleInput)
 	windows := buildWindowList(WindowSize, numbers)
 
-	for _, window := range windows {
-		number, isSum := window.isSumOfCandidates()
-		if !isSum {
-			channel <- number
-			break
-		}
+	if number, found := findNonSumValue(windows); found {
+		channel <- number
+	} else {
+		channel <- -1
 	}
 
 	waitGroup.Done()
+}
+
+func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
+	channel <- 2
+	waitGroup.Done()
+}
+
+func findNonSumValue(windows []Window) (int64, bool) {
+	for _, window := range windows {
+		number, isSum := window.isSumOfCandidates()
+		if !isSum {
+			return number, true
+		}
+	}
+	return -1, false
 }
 
 func buildWindowList(WindowSize int, numbers []int64) []Window {
@@ -100,11 +113,6 @@ func buildNumberList(input []string) []int64 {
 		}
 	}
 	return numbers
-}
-
-func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 2
-	waitGroup.Done()
 }
 
 func loadPuzzleInput() []string {
