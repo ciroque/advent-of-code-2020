@@ -57,7 +57,7 @@ func doExamples(waitGroup *sync.WaitGroup) {
 func doPartOne(channel chan int, waitGroup *sync.WaitGroup) {
 	puzzleInput := loadPuzzleInput()
 	instructions := buildInstructionList(puzzleInput)
-	accumulator, cycle := executeFrom(instructions)
+	accumulator, cycle := execute(instructions)
 	if cycle == true {
 		log.Info().Msg("Cycle detected")
 	}
@@ -74,7 +74,7 @@ func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
 		foundProgramEnd := false
 		for _, ip := range ops {
 			instructions[ip].swapOp()
-			acc, foundProgramEnd = executeFrom(instructions)
+			acc, foundProgramEnd = execute(instructions)
 			if foundProgramEnd {
 				return true, acc
 			}
@@ -120,7 +120,7 @@ func buildInstructionList(puzzleInput []string) []Instruction {
 // The instruction pointer
 // The accumulator
 // true if a instruction length + 1 found, false otherwise
-func executeFrom(instructions []Instruction) (int, bool) {
+func execute(instructions []Instruction) (int, bool) {
 	instructionPointer := 0
 	instructionCounts := map[int]int{}
 	for index := range instructions {
