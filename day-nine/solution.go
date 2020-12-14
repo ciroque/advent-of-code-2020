@@ -4,6 +4,7 @@ import (
 	"github.com/ciroque/advent-of-code-2020/support"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"sort"
 	"strconv"
 	"sync"
 )
@@ -21,7 +22,7 @@ func (w *Window) buildMap() map[int64]int64 {
 	return candidateMap
 }
 
-func (w *Window) isSumOfCandidates() (int64, bool) {
+func (w *Window) hasSumOfPairs() (int64, bool) {
 	candidateMap := w.buildMap()
 	for _, number := range w.candidates {
 		complement := w.target - number
@@ -33,6 +34,25 @@ func (w *Window) isSumOfCandidates() (int64, bool) {
 	return w.target, false
 }
 
+func (w *Window) hasSumOfContiguousNumbers() (int64, bool) {
+	length := len(w.candidates)
+	for startIndex := 0; startIndex < length; startIndex++ {
+		accumulator := w.candidates[startIndex]
+		for seekIndex := startIndex + 1; seekIndex < length; seekIndex++ {
+			accumulator = accumulator + w.candidates[seekIndex]
+			if accumulator == 31161678 {
+				contiguousNumbers := w.candidates[startIndex:seekIndex]
+				sort.Slice(contiguousNumbers, func(l, r int) bool { return contiguousNumbers[l] < contiguousNumbers[r] })
+				sum := contiguousNumbers[0] + contiguousNumbers[len(contiguousNumbers)-1]
+
+				return sum, true
+			}
+		}
+	}
+
+	return -1, false
+}
+
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
@@ -41,7 +61,7 @@ func main() {
 	waitGroup.Add(waitCount)
 
 	partOneChannel := make(chan int64)
-	partTwoChannel := make(chan int)
+	partTwoChannel := make(chan int64)
 
 	go doExamples(&waitGroup)
 	go doPartOne(partOneChannel, &waitGroup)
@@ -52,7 +72,7 @@ func main() {
 
 	waitGroup.Wait()
 
-	log.Info().Int64("part-one", partOneResult).Int("part-two", partTwoResult).Msg("day ...")
+	log.Info().Int64("part-one", partOneResult).Int64("part-two", partTwoResult).Msg("day ...")
 }
 
 func doExamples(waitGroup *sync.WaitGroup) {
@@ -75,14 +95,33 @@ func doPartOne(channel chan int64, waitGroup *sync.WaitGroup) {
 	waitGroup.Done()
 }
 
-func doPartTwo(channel chan int, waitGroup *sync.WaitGroup) {
-	channel <- 2
+func doPartTwo(channel chan int64, waitGroup *sync.WaitGroup) {
+	const WindowSize = 25
+	puzzleInput := loadPuzzleInput()
+	numbers := buildNumberList(puzzleInput)
+	windows := buildWindowList(WindowSize, numbers)
+
+	if number, found := findContiguousSum(windows); found {
+		channel <- number
+	} else {
+		channel <- -1
+	}
+
 	waitGroup.Done()
+}
+
+func findContiguousSum(windows []Window) (int64, bool) {
+	for _, window := range windows {
+		if sum, found := window.hasSumOfContiguousNumbers(); found {
+			return sum, true
+		}
+	}
+	return -1, false
 }
 
 func findNonSumValue(windows []Window) (int64, bool) {
 	for _, window := range windows {
-		number, isSum := window.isSumOfCandidates()
+		number, isSum := window.hasSumOfPairs()
 		if !isSum {
 			return number, true
 		}
