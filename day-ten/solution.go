@@ -11,7 +11,7 @@ import (
 )
 
 type Result struct {
-	answer   int
+	answer   int64
 	duration int64
 }
 
@@ -36,9 +36,9 @@ func main() {
 
 	log.
 		Info().
-		Int("part-one-answer", partOneResult.answer).
+		Int64("part-one-answer", partOneResult.answer).
 		Int64("part-one-duration", partOneResult.duration).
-		Int("part-two-answer", partTwoResult.answer).
+		Int64("part-two-answer", partTwoResult.answer).
 		Int64("part-two-duration", partTwoResult.duration).
 		Msg("day 10")
 }
@@ -52,9 +52,9 @@ func doPartOne(channel chan Result, waitGroup *sync.WaitGroup) {
 	start := time.Now()
 	puzzleInput := loadPuzzleInput()
 	numbers := buildNumberList(puzzleInput)
-	sort.Ints(numbers)
+	sort.Slice(numbers, func(l, r int) bool { return numbers[l] < numbers[r] })
 
-	deltas := map[int]int{
+	deltas := map[int64]int{
 		1: 1,
 		3: 0,
 	}
@@ -63,7 +63,7 @@ func doPartOne(channel chan Result, waitGroup *sync.WaitGroup) {
 		deltas[delta]++
 	}
 
-	product := deltas[1] * (deltas[3] + 1)
+	product := int64(deltas[1] * (deltas[3] + 1))
 
 	channel <- Result{
 		answer:   product,
@@ -75,18 +75,53 @@ func doPartOne(channel chan Result, waitGroup *sync.WaitGroup) {
 func doPartTwo(channel chan Result, waitGroup *sync.WaitGroup) {
 	start := time.Now()
 
+	areDifferentByOne := func(current, previous, next int64) bool {
+		return current-previous == 1 && next-current == 1
+	}
+
+	puzzleInput := loadPuzzleInput()
+	numbers := buildNumberList(puzzleInput)
+	sort.Slice(numbers, func(l, r int) bool { return numbers[l] < numbers[r] })
+
+	removables := make([]bool, len(numbers))
+	removables[0] = areDifferentByOne(numbers[0], 0, numbers[1])
+	for current, previous, next := 1, 0, 2; next < len(numbers); current, previous, next = current+1, previous+1, next+1 {
+		removables[current] = areDifferentByOne(numbers[current], numbers[previous], numbers[next])
+	}
+
+	accumulator := int64(1)
+	span := 0
+	for _, value := range removables {
+		if value {
+			span = span + 1
+		} else {
+			switch span {
+			case 1:
+				accumulator *= 2
+			case 2:
+				accumulator *= 4
+			case 3:
+				accumulator *= 7
+			default:
+				log.Info().Int("span", span).Msg("ERROR: unrecognized span")
+			}
+
+			span = 0
+		}
+	}
+
 	channel <- Result{
-		answer:   2,
+		answer:   accumulator,
 		duration: time.Since(start).Microseconds(),
 	}
 	waitGroup.Done()
 }
 
-func buildNumberList(input []string) []int {
-	var numbers []int
+func buildNumberList(input []string) []int64 {
+	var numbers []int64
 	for _, line := range input {
-		if number, err := strconv.ParseInt(line, 10, 32); err == nil {
-			numbers = append(numbers, int(number))
+		if number, err := strconv.ParseInt(line, 10, 64); err == nil {
+			numbers = append(numbers, number)
 		}
 	}
 	return numbers
