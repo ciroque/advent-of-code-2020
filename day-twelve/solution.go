@@ -4,6 +4,8 @@ import (
 	"github.com/ciroque/advent-of-code-2020/support"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"math"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -15,8 +17,6 @@ type Result struct {
 
 func main() {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-
-	_ = loadPuzzleInput()
 
 	waitCount := 3
 	var waitGroup sync.WaitGroup
@@ -51,9 +51,69 @@ func doExamples(waitGroup *sync.WaitGroup) {
 func doPartOne(channel chan Result, waitGroup *sync.WaitGroup) {
 	start := time.Now()
 
+	puzzleInput := loadPuzzleInput()
+
+	headingMap := map[int]rune{
+		0:   'N',
+		90:  'E',
+		180: 'S',
+		270: 'W',
+	}
+
+	north := 0
+	east := 0
+	heading := 90
+
+	updateLocation := func(op rune, distance, n, e int) (n1, e1 int) {
+		n1 = n
+		e1 = e
+		switch op {
+		case 'N':
+			n1 = n1 + distance
+		case 'S':
+			n1 = n1 - distance
+		case 'E':
+			e1 = e1 + distance
+		case 'W':
+			e1 = e1 - distance
+		}
+
+		return
+	}
+
+	for _, value := range puzzleInput {
+		op := rune(value[0])
+		wtf := value[1:]
+		arg, _ := strconv.ParseInt(wtf, 10, 32)
+		distance := int(arg)
+
+		switch op {
+		case 'L':
+			heading = (heading - distance) % 360
+			if heading > 360 || heading < 0 {
+				heading = heading + 360
+			}
+
+		case 'R':
+			heading = (heading + distance) % 360
+			if heading > 360 {
+				heading = heading - 360
+			}
+
+		case 'F':
+			north, east = updateLocation(headingMap[heading], distance, north, east)
+
+		default:
+			north, east = updateLocation(op, distance, north, east)
+		}
+
+	}
+
+	manhattanDistance := int(math.Abs(float64(north)) + math.Abs(float64(east)))
+
 	channel <- Result{
-		answer:   1,
-		duration: time.Since(start).Nanoseconds(),
+		answer:   manhattanDistance,
+		duration: time.Since(start).Microseconds(),
 	}
 	waitGroup.Done()
 }
@@ -62,13 +122,14 @@ func doPartTwo(channel chan Result, waitGroup *sync.WaitGroup) {
 	start := time.Now()
 
 	channel <- Result{
-		answer:   1,
+		answer:   2,
 		duration: time.Since(start).Nanoseconds(),
 	}
 	waitGroup.Done()
 }
 
-func loadPuzzleInput() string {
+func loadPuzzleInput() []string {
+	//filename := "example-input.dat"
 	filename := "puzzle-input.dat"
-	return support.ReadFile(filename)
+	return support.ReadFileIntoLines(filename)
 }
