@@ -47,30 +47,6 @@ type SeatingArea struct {
 	changeCount     int
 }
 
-func (s *SeatingArea) swapSeatMaps() {
-	temp := s.currentSeatMap
-	s.currentSeatMap = s.previousSeatMap
-	s.previousSeatMap = temp
-}
-
-func (s *SeatingArea) load(input []string) {
-	s.rowCount = len(input)
-	s.rowWidth = len(input[0])
-	s.primarySeatMap = make([]State, s.rowCount*s.rowWidth)
-	s.secondarySeatMap = make([]State, s.rowCount*s.rowWidth)
-
-	s.currentSeatMap = &s.primarySeatMap
-	s.previousSeatMap = &s.secondarySeatMap
-
-	for lineIndex, line := range input {
-		for runeIndex, char := range line {
-			index := (lineIndex * s.rowWidth) + (runeIndex % s.rowWidth)
-			(*s.currentSeatMap)[index] = State(char)
-			(*s.previousSeatMap)[index] = State(char)
-		}
-	}
-}
-
 func (s *SeatingArea) areSeatingMapsSame() bool {
 	for index := range s.primarySeatMap {
 		if s.primarySeatMap[index] != s.secondarySeatMap[index] {
@@ -81,43 +57,7 @@ func (s *SeatingArea) areSeatingMapsSame() bool {
 	return true
 }
 
-func (s *SeatingArea) printCurrentMap() {
-	fmt.Println()
-	fmt.Println("current map")
-	for index, value := range *s.currentSeatMap {
-		fmt.Print(string(value))
-		if (index+1)%s.rowWidth == 0 {
-			fmt.Println()
-		}
-	}
-	fmt.Println()
-}
-
-func (s *SeatingArea) printPreviousMap() {
-	fmt.Println()
-	fmt.Println("previous map")
-	for index, value := range *s.previousSeatMap {
-		fmt.Print(string(value))
-		if (index+1)%s.rowWidth == 0 {
-			fmt.Println()
-		}
-	}
-	fmt.Println()
-}
-
-func (s *SeatingArea) isFloor(index int) bool {
-	return (*s.currentSeatMap)[index] == Floor
-}
-
-func (s *SeatingArea) isOccupied(index int) bool {
-	return (*s.currentSeatMap)[index] == Occupied
-}
-
-func (s *SeatingArea) isPreviouslyOccupied(index int) bool {
-	return (*s.previousSeatMap)[index] == Occupied
-}
-
-func (s *SeatingArea) swapSeat(index int) (changed bool) {
+func (s *SeatingArea) chooseSeat(index int) (changed bool) {
 	changed = false
 
 	if s.isFloor(index) {
@@ -137,6 +77,30 @@ func (s *SeatingArea) swapSeat(index int) (changed bool) {
 		} else {
 			(*s.currentSeatMap)[index] = Vacant
 			changed = false
+		}
+	}
+
+	return
+}
+
+func (s *SeatingArea) chooseSeats() (changeCount int) {
+	changeCount = 0
+
+	for index := range *s.currentSeatMap {
+		if changed := s.chooseSeat(index); changed {
+			changeCount = changeCount + 1
+		}
+	}
+
+	return
+}
+
+func (s *SeatingArea) countOccupiedSeats() (count int) {
+	count = 0
+
+	for index := range *s.currentSeatMap {
+		if s.isOccupied(index) {
+			count = count + 1
 		}
 	}
 
@@ -175,6 +139,19 @@ func (s *SeatingArea) determineLocation(index int) (location Location) {
 
 	} else {
 		location = Body
+	}
+
+	return
+}
+
+func (s *SeatingArea) findAdjacentCount(index int) (adjacentCount int) {
+	adjacentCount = 0
+
+	adjacentIndexes := s.findAdjacentIndexes(index)
+	for _, adjacentIndex := range adjacentIndexes {
+		if s.isPreviouslyOccupied(adjacentIndex) { // Needs to work on s.previousSeatMap
+			adjacentCount = adjacentCount + 1
+		}
 	}
 
 	return
@@ -235,41 +212,64 @@ func (s *SeatingArea) findAdjacentIndexes(index int) (adjacentIndexes []int) {
 	return
 }
 
-func (s *SeatingArea) findAdjacentCount(index int) (adjacentCount int) {
-	adjacentCount = 0
-
-	adjacentIndexes := s.findAdjacentIndexes(index)
-	for _, adjacentIndex := range adjacentIndexes {
-		if s.isPreviouslyOccupied(adjacentIndex) { // Needs to work on s.previousSeatMap
-			adjacentCount = adjacentCount + 1
-		}
-	}
-
-	return
+func (s *SeatingArea) isFloor(index int) bool {
+	return (*s.currentSeatMap)[index] == Floor
 }
 
-func (s *SeatingArea) chooseSeats() (changeCount int) {
-	changeCount = 0
-
-	for index := range *s.currentSeatMap {
-		if s.swapSeat(index) {
-			changeCount = changeCount + 1
-		}
-	}
-
-	return
+func (s *SeatingArea) isOccupied(index int) bool {
+	return (*s.currentSeatMap)[index] == Occupied
 }
 
-func (s *SeatingArea) countOccupiedSeats() (count int) {
-	count = 0
+func (s *SeatingArea) isPreviouslyOccupied(index int) bool {
+	return (*s.previousSeatMap)[index] == Occupied
+}
 
-	for index := range *s.currentSeatMap {
-		if s.isOccupied(index) {
-			count = count + 1
+func (s *SeatingArea) load(input []string) {
+	s.rowCount = len(input)
+	s.rowWidth = len(input[0])
+	s.primarySeatMap = make([]State, s.rowCount*s.rowWidth)
+	s.secondarySeatMap = make([]State, s.rowCount*s.rowWidth)
+
+	s.currentSeatMap = &s.primarySeatMap
+	s.previousSeatMap = &s.secondarySeatMap
+
+	for lineIndex, line := range input {
+		for runeIndex, char := range line {
+			index := (lineIndex * s.rowWidth) + (runeIndex % s.rowWidth)
+			(*s.currentSeatMap)[index] = State(char)
+			(*s.previousSeatMap)[index] = State(char)
 		}
 	}
+}
 
-	return
+func (s *SeatingArea) printCurrentMap() {
+	fmt.Println()
+	fmt.Println("current map")
+	for index, value := range *s.currentSeatMap {
+		fmt.Print(string(value))
+		if (index+1)%s.rowWidth == 0 {
+			fmt.Println()
+		}
+	}
+	fmt.Println()
+}
+
+func (s *SeatingArea) printPreviousMap() {
+	fmt.Println()
+	fmt.Println("previous map")
+	for index, value := range *s.previousSeatMap {
+		fmt.Print(string(value))
+		if (index+1)%s.rowWidth == 0 {
+			fmt.Println()
+		}
+	}
+	fmt.Println()
+}
+
+func (s *SeatingArea) swapSeatMaps() {
+	temp := s.currentSeatMap
+	s.currentSeatMap = s.previousSeatMap
+	s.previousSeatMap = temp
 }
 
 func main() {
