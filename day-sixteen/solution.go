@@ -24,6 +24,8 @@ type PuzzleInput struct {
 	nearbyTickets        [][]int
 	invalidTicketIndexes map[int]int
 	validTickets         [][]int
+	valueIndexMap        map[string]int
+	departureProduct     int
 }
 
 type Bounds struct {
@@ -34,6 +36,14 @@ type Bounds struct {
 type Bound struct {
 	upper int
 	lower int
+}
+
+func (pi *PuzzleInput) calculateDepartureProduct() {
+	for ruleName, valueIndex := range pi.valueIndexMap {
+		if strings.HasPrefix(ruleName, "departure") {
+			pi.departureProduct = pi.departureProduct * pi.ticket[valueIndex]
+		}
+	}
 }
 
 func (pi *PuzzleInput) calculateErrorRate() {
@@ -63,10 +73,55 @@ func (pi *PuzzleInput) calculateErrorRate() {
 	return
 }
 
+func (pi *PuzzleInput) cloneRuleMap() (ruleMap map[string]Bounds) {
+	ruleMap = map[string]Bounds{}
+	for ruleName, bounds := range pi.ruleMap {
+		ruleMap[ruleName] = bounds
+	}
+	return
+}
+
 func (pi *PuzzleInput) loadValidTickets() {
 	for index, _ := range pi.nearbyTickets {
 		if _, found := pi.invalidTicketIndexes[index]; !found {
 			pi.validTickets = append(pi.validTickets, pi.nearbyTickets[index])
+		}
+	}
+}
+
+func (pi *PuzzleInput) findValueFieldsIndexes() {
+	ruleMap := pi.cloneRuleMap()
+	resolvedValueIndexes := map[int]bool{}
+	for len(pi.valueIndexMap) < len(pi.ruleMap) {
+
+		for valueIndex := range pi.ticket {
+			if resolvedValueIndexes[valueIndex] {
+				continue
+			}
+
+			var validRuleNames []string
+			for ruleName, bounds := range ruleMap {
+				satisfiesAllBounds := true
+				for _, ticket := range pi.validTickets {
+					value := ticket[valueIndex]
+					passed := bounds.inRange(value)
+					if !passed {
+						satisfiesAllBounds = false
+						break
+					}
+				}
+
+				if satisfiesAllBounds {
+					validRuleNames = append(validRuleNames, ruleName)
+				}
+			}
+
+			if len(validRuleNames) == 1 {
+				ruleName := validRuleNames[0]
+				pi.valueIndexMap[ruleName] = valueIndex
+				resolvedValueIndexes[valueIndex] = true
+				delete(ruleMap, ruleName)
+			}
 		}
 	}
 }
@@ -144,8 +199,12 @@ func main() {
 }
 
 func doExamples(waitGroup *sync.WaitGroup) {
-	puzzleInput := loadPuzzleInput("example")
+	puzzleInput := loadPuzzleInput("part-two")
 	puzzleInput.calculateErrorRate()
+	puzzleInput.loadValidTickets()
+	puzzleInput.findValueFieldsIndexes()
+	puzzleInput.calculateDepartureProduct()
+
 	waitGroup.Done()
 }
 
@@ -168,9 +227,11 @@ func doPartTwo(channel chan Result, waitGroup *sync.WaitGroup) {
 	puzzleInput := loadPuzzleInput("puzzle")
 	puzzleInput.calculateErrorRate()
 	puzzleInput.loadValidTickets()
+	puzzleInput.findValueFieldsIndexes()
+	puzzleInput.calculateDepartureProduct()
 
 	channel <- Result{
-		answer:   len(puzzleInput.invalidTicketIndexes),
+		answer:   puzzleInput.departureProduct,
 		duration: time.Since(start).Milliseconds(),
 	}
 	waitGroup.Done()
@@ -217,5 +278,7 @@ func loadPuzzleInput(prefix string) (puzzleInput PuzzleInput) {
 		nearbyTickets:        nearbyTickets,
 		invalidTicketIndexes: map[int]int{},
 		validTickets:         [][]int{},
+		valueIndexMap:        map[string]int{},
+		departureProduct:     1,
 	}
 }
