@@ -16,12 +16,13 @@ type Result struct {
 }
 
 type PuzzleInput struct {
+	valuesCount          int
 	ruleMap              map[string]Bounds
-	ticket               string
-	nearbyTickets        string
-	parsedNearbyTickets  [][]int
-	invalidTicketIndexes map[int]int
+	rawNearbyTickets     string
 	errorRate            int
+	ticket               []int
+	nearbyTickets        [][]int
+	invalidTicketIndexes map[int]int
 	validTickets         [][]int
 }
 
@@ -35,12 +36,12 @@ type Bound struct {
 	lower int
 }
 
-func (pi *PuzzleInput) findInvalidTickets() {
+func (pi *PuzzleInput) calculateErrorRate() {
 	const noLimit = -1
 	const comma = ","
-	values := strings.Split(strings.Replace(pi.nearbyTickets, "\n", ",", noLimit), comma)
+	values := strings.Split(strings.Replace(pi.rawNearbyTickets, "\n", ",", noLimit), comma)
 
-	for ticketIndex, value := range values {
+	for valueIndex, value := range values {
 		i64val, _ := strconv.ParseInt(value, 10, 32)
 		ival := int(i64val)
 
@@ -55,7 +56,7 @@ func (pi *PuzzleInput) findInvalidTickets() {
 
 		if inBounds[true] == 0 {
 			pi.errorRate += ival
-			pi.invalidTicketIndexes[ticketIndex] = ticketIndex
+			pi.invalidTicketIndexes[valueIndex/pi.valuesCount] = ival // total side-effect, but hell, we're here
 		}
 	}
 
@@ -63,7 +64,11 @@ func (pi *PuzzleInput) findInvalidTickets() {
 }
 
 func (pi *PuzzleInput) loadValidTickets() {
-
+	for index, _ := range pi.nearbyTickets {
+		if _, found := pi.invalidTicketIndexes[index]; !found {
+			pi.validTickets = append(pi.validTickets, pi.nearbyTickets[index])
+		}
+	}
 }
 
 func (b *Bound) inRange(value int) bool {
@@ -140,7 +145,7 @@ func main() {
 
 func doExamples(waitGroup *sync.WaitGroup) {
 	puzzleInput := loadPuzzleInput("example")
-	puzzleInput.findInvalidTickets()
+	puzzleInput.calculateErrorRate()
 	waitGroup.Done()
 }
 
@@ -148,7 +153,7 @@ func doPartOne(channel chan Result, waitGroup *sync.WaitGroup) {
 	start := time.Now()
 
 	puzzleInput := loadPuzzleInput("puzzle")
-	puzzleInput.findInvalidTickets()
+	puzzleInput.calculateErrorRate()
 
 	channel <- Result{
 		answer:   puzzleInput.errorRate,
@@ -161,13 +166,28 @@ func doPartTwo(channel chan Result, waitGroup *sync.WaitGroup) {
 	start := time.Now()
 
 	puzzleInput := loadPuzzleInput("puzzle")
-	puzzleInput.findInvalidTickets()
+	puzzleInput.calculateErrorRate()
+	puzzleInput.loadValidTickets()
 
 	channel <- Result{
 		answer:   len(puzzleInput.invalidTicketIndexes),
 		duration: time.Since(start).Milliseconds(),
 	}
 	waitGroup.Done()
+}
+
+func stringToIntList(data string) (numbers []int) {
+	numbers = stringListToIntList(strings.Split(data, ","))
+	return
+}
+
+func stringListToIntList(strings []string) (numbers []int) {
+	for _, entry := range strings {
+		number64, _ := strconv.ParseInt(entry, 10, 32)
+		numbers = append(numbers, int(number64))
+	}
+
+	return
 }
 
 func loadPuzzleInput(prefix string) (puzzleInput PuzzleInput) {
@@ -178,25 +198,24 @@ func loadPuzzleInput(prefix string) (puzzleInput PuzzleInput) {
 	const noLimit = -1
 
 	content := support.ReadFile(filename)
-	sections := strings.Split(content, newline+newline) // [3]string
-	ticket := strings.Split(sections[1], newline)
+	sections := strings.Split(content, newline+newline)
+	ticketParts := strings.Split(sections[1], newline)
+	rawNearbyTickets := strings.Replace(sections[2], "nearby tickets:\n", "", noLimit)
 
-	justNearbyTickets := strings.Replace(sections[2], "nearby tickets:\n", "", noLimit)
-	values := strings.Split(strings.Replace(justNearbyTickets, "\n", ",", noLimit), comma)
+	ticket := stringToIntList(ticketParts[1])
 
-	var parsedNearbyTickets [][]int
-	for _, value := range values {
-		var nearbyTicket []int
-		i64val, _ := strconv.ParseInt(value, 10, 32)
-		ival := int(i64val)
-		nearbyTicket = append(nearbyTicket, ival)
+	var nearbyTickets [][]int
+	for _, ticket := range strings.Split(rawNearbyTickets, "\n") {
+		nearbyTickets = append(nearbyTickets, stringToIntList(ticket))
 	}
 
 	return PuzzleInput{
+		valuesCount:          len(ticket),
 		ruleMap:              newRuleMap(strings.Split(sections[0], newline)),
-		ticket:               ticket[1],
-		nearbyTickets:        justNearbyTickets,
-		parsedNearbyTickets:  parsedNearbyTickets,
+		ticket:               ticket,
+		rawNearbyTickets:     rawNearbyTickets,
+		nearbyTickets:        nearbyTickets,
 		invalidTicketIndexes: map[int]int{},
+		validTickets:         [][]int{},
 	}
 }
